@@ -2,8 +2,16 @@ import torch
 from torchvision import transforms
 from torch import nn
 
-VGG_MEAN = [0.485, 0.456, 0.406]
-VGG_STD = [0.229, 0.224, 0.225]
+VGG_MEAN = torch.tensor([0.485, 0.456, 0.406])
+VGG_STD = torch.tensor([0.229, 0.224, 0.225])
+
+
+def normalize(image):
+    return transforms.Normalize(mean=VGG_MEAN, std=VGG_STD)(image)
+
+
+def denormalize(image):
+    return transforms.Normalize(mean=-VGG_MEAN, std=1 / VGG_STD)(image)
 
 
 def preprocess(image):
@@ -18,15 +26,7 @@ def preprocess(image):
 
 
 # Total variation loss
-class TVLoss(nn.Module):
-    def __init__(self, weight):
-        super(TVLoss, self).__init__()
-        self.weight = weight
-
-    def forward(self, input):
-        self.x_diff = input[:, :, 1:, :] - input[:, :, :-1, :]
-        self.y_diff = input[:, :, :, 1:] - input[:, :, :, :-1]
-        self.loss = self.weight * (
-            torch.sum(torch.abs(self.x_diff)) + torch.sum(torch.abs(self.y_diff))
-        )
-        return input
+def tv_loss(image):
+    x_diff = image[:, :, 1:, :] - image[:, :, :-1, :]
+    y_diff = image[:, :, :, 1:] - image[:, :, :, :-1]
+    return torch.sum(torch.abs(x_diff)) + torch.sum(torch.abs(y_diff))
