@@ -16,11 +16,37 @@ def train(gen_img, loss_model, optimizer):
 
 def deepdream(args=None):
     features = VGG19(device=device)
-    image = Image.open("temp.png")
+    image = Image.open("dog.jpg")
     image = utils.preprocess(image).to(device)
 
-    for step in range(200):
-        ...
+    gen_img = image.clone()
+    optimizer = optim.SGD([gen_img], lr=1e-2)
+    gen_img.requires_grad_(True)
+
+    num_steps = 400
+    for step in range(num_steps):
+        optimizer.zero_grad()
+
+        activations = features(gen_img)
+        with torch.no_grad():
+            if step % 50 == 0:
+                print(
+                    f"activations: {[a.item() for a in activations]}  [{step:>5d}/{num_steps:>5d}]"
+                )
+                save_image(utils.denormalize(gen_img).squeeze(0), "temp.png")
+
+        # per pixel loss l2 regularizer
+        per_pixel_loss = F.mse_loss(gen_img, image)
+
+        loss = (
+            -1e4 * sum(activations)
+            + 1e-2 * utils.tv_loss(gen_img)
+            + 1e2 * per_pixel_loss
+        )
+        loss.backward()
+        optimizer.step()
+
+    save_image(utils.denormalize(gen_img).squeeze(0), "test-image.png")
 
 
 # generates what the model thinks a particular class is
@@ -34,7 +60,7 @@ def generate_class(args=None):
 
     gen_img = torch.randn(size=(1, 3, 512, 512)).to(device) * 0.25 + 0.5
 
-    optimizer = optim.SGD([gen_img], lr=1e-2)
+    optimizer = optim.Adam([gen_img], lr=1e-2)
     gen_img.requires_grad_(True)
 
     for step in range(4000):

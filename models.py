@@ -7,7 +7,7 @@ import torch.nn as nn
 class VGG19(nn.Module):
     def __init__(
         self,
-        layers=["relu1_1", "relu2_1", "relu3_1", "relu4_1", "relu5_1"],
+        layers=["relu4_1", "relu5_1"],
         device="cpu",
     ):
         super(VGG19, self).__init__()
@@ -34,8 +34,7 @@ class VGG19(nn.Module):
 
             slice_temp.add_module(name, x)
             if name in layers:
-                self.slices += slice_temp
-                print(slice_temp)
+                self.slices.append(slice_temp)
                 slice_temp = nn.Sequential()
                 layers.remove(name)
 
@@ -48,6 +47,6 @@ class VGG19(nn.Module):
         x = input
         for slice in self.slices:
             x = slice(x)
-            activations += x
+            activations.append(x.mean())
 
         return activations

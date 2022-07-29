@@ -14,11 +14,11 @@ def denormalize(image):
     return transforms.Normalize(mean=-VGG_MEAN, std=1 / VGG_STD)(image)
 
 
-def preprocess(image):
+def preprocess(image, image_size=512):
     transform = transforms.Compose(
         [
             transforms.ToTensor(),
-            transforms.Resize(512),
+            transforms.Resize(image_size),
             transforms.Normalize(mean=VGG_MEAN, std=VGG_STD),
         ]
     )
